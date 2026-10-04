@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlantCare AI | Plant Disease Detection</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="navbar">
+  <a class="brand" href="#"><span>🌱</span> PlantCare <b>AI</b></a>
+  <nav>
+    <a href="#home">Home</a>
+    <a href="#detect">Detect</a>
+    <a href="#how">How It Works</a>
+    <a href="#about">About</a>
+  </nav>
+</header>
+
+<main>
+<section class="hero" id="home">
+  <div class="hero-copy">
+    <span class="badge">AI-POWERED PLANT HEALTH</span>
+    <h1>Give your plants a <span>health check</span> in seconds.</h1>
+    <p>Upload or capture a clear photo of a plant leaf. PlantCare AI will analyze it and help identify possible diseases, symptoms and next steps.</p>
+    <a class="primary-btn" href="#detect">🔍 Detect Plant Disease</a>
+    <div class="trust-row">
+      <span>🌾 Crop plants</span>
+      <span>🪴 Household plants</span>
+      <span>📱 Mobile friendly</span>
+    </div>
+  </div>
+  <div class="hero-card">
+    <div class="leaf-orb">🌿</div>
+    <div class="floating-card top">🤖 AI Analysis <strong>Ready</strong></div>
+    <div class="floating-card bottom">✓ Image-based detection</div>
+  </div>
+</section>
+
+<section class="detect-section" id="detect">
+  <div class="section-heading">
+    <span class="eyebrow">START DETECTION</span>
+    <h2>Upload a plant photo</h2>
+    <p>For best results, use a well-lit photo where the affected leaf is clearly visible.</p>
+  </div>
+
+  <div class="detector">
+    <div class="drop-zone" id="dropZone">
+      <div class="upload-icon">📷</div>
+      <h3>Upload or capture a leaf image</h3>
+      <p>Drag & drop an image here, or choose a file from your device.</p>
+      <div class="upload-actions">
+        <label class="primary-btn small" for="fileInput">📁 Choose Image</label>
+        <button class="secondary-btn small" id="cameraBtn" type="button">📸 Use Camera</button>
+      </div>
+      <input id="fileInput" type="file" accept="image/png,image/jpeg,image/jpg" hidden>
+      <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+      <small>Supported: JPG, JPEG, PNG • Recommended: clear leaf photo</small>
+    </div>
+
+    <div class="preview-panel" id="previewPanel">
+      <div class="preview-placeholder">
+        <span>🌱</span>
+        <p>Your selected image will appear here.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="result-card" id="resultCard" hidden>
+    <div class="result-image-wrap"><img id="previewImage" alt="Selected plant leaf"></div>
+    <div class="result-info">
+      <span class="status">AI ANALYSIS READY</span>
+      <h3 id="resultTitle">Ready for prediction</h3>
+      <p id="resultText">The frontend is ready. Once the trained model is connected, its prediction will appear here.</p>
+      <div class="confidence">
+        <span>Model confidence</span>
+        <strong id="confidenceValue">—</strong>
+      </div>
+      <div class="progress"><span id="progressBar"></span></div>
+      <button class="secondary-btn" id="newImageBtn">↻ Check Another Image</button>
+    </div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <div class="section-heading">
+    <span class="eyebrow">SIMPLE PROCESS</span>
+    <h2>How PlantCare AI works</h2>
+  </div>
+  <div class="steps">
+    <article><div>01</div><h3>Capture</h3><p>Take or upload a clear photo of the affected leaf.</p></article>
+    <article><div>02</div><h3>Analyze</h3><p>Our image model processes the leaf and compares visual patterns.</p></article>
+    <article><div>03</div><h3>Understand</h3><p>Get a predicted disease, confidence score and helpful guidance.</p></article>
+  </div>
+</section>
+
+<section class="features" id="about">
+  <div><span>🌾</span><h3>Crop plants</h3><p>Designed to support common agricultural crops and their disease classes included in the model.</p></div>
+  <div><span>🪴</span><h3>Home plants</h3><p>Suitable for household and garden plants when those classes are included in the trained dataset.</p></div>
+  <div><span>🛡️</span><h3>Confidence-aware</h3><p>Low-confidence predictions can be flagged instead of presenting an unreliable diagnosis as certain.</p></div>
+</section>
+</main>
+
+<footer>
+  <strong>🌱 PlantCare AI</strong>
+  <span>AI-based plant disease detection project</span>
+</footer>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

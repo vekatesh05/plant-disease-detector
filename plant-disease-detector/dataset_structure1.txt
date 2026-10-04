@@ -1,0 +1,18 @@
+Create these folders before training:
+
+dataset/
+├── train/
+├── val/
+└── test/
+
+Inside each split, create one folder per crop-disease class.
+
+Example:
+dataset/train/Tomato___Early_blight/
+dataset/train/Tomato___Late_blight/
+dataset/train/Tomato___healthy/
+dataset/train/Potato___Early_blight/
+dataset/train/Potato___Late_blight/
+dataset/train/Potato___healthy/
+
+Do not put the same original photo, or near-duplicate photos from the same source plant, into both training and test sets.
