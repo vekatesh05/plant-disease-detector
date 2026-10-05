@@ -1,111 +1,1186 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PlantCare AI | Plant Disease Detection</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PlantCare AI | Plant Disease Detector</title>
+
+  <style>
+    :root {
+      --green: #176b45;
+      --green-soft: #e0eedb;
+      --green-deep: #123f2e;
+      --dark: #16392b;
+      --muted: #596c61;
+      --border: #dbe6dc;
+      --background: #f4f7ef;
+      --warning-bg: #fff5db;
+      --warning-text: #72520a;
+      --shadow: 0 16px 45px rgba(18, 63, 46, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      color: var(--dark);
+      background-color: var(--background);
+      background-image:
+        linear-gradient(rgba(247, 250, 244, 0.28), rgba(244, 247, 239, 0.34)),
+        url("static/background-image.jpg");
+      background-position: center;
+      background-size: cover;
+      background-attachment: fixed;
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 20px max(5vw, 20px);
+      background: rgba(255,255,255,0.92);
+      border-bottom: 1px solid var(--border);
+      font-size: 22px;
+      font-weight: 800;
+      backdrop-filter: blur(10px);
+    }
+
+    header span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      margin-left: 12px;
+    }
+
+    main {
+      max-width: 1050px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .hero { text-align: center; margin-bottom: 32px; }
+
+    .badge {
+      display: inline-block;
+      background: var(--green-soft);
+      border-radius: 30px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green-deep);
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+      margin: 18px 0;
+    }
+
+    h2 { margin-top: 0; font-size: 21px; }
+    h3, h4 { margin-bottom: 10px; }
+    p { color: var(--muted); margin: 0 0 12px; }
+
+    .hero > p {
+      color: #173d2d;
+      font-weight: 650;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+
+    .upload {
+      border: 2px dashed #9dbda5;
+      background: linear-gradient(180deg, #f7faf4 0%, #edf5eb 100%);
+      border-radius: 16px;
+      padding: 26px 18px;
+      text-align: center;
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+
+    .upload.dragging {
+      border-color: var(--green);
+      background: #edf7ef;
+      transform: translateY(-1px);
+    }
+
+    .leaf { font-size: 42px; }
+
+    input {
+      display: block;
+      max-width: 100%;
+      margin: 16px auto 0;
+      font: inherit;
+    }
+
+    input::file-selector-button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--green-soft);
+      color: var(--dark);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    #preview {
+      width: 100%;
+      max-height: 290px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: #f4f7ef;
+      margin-top: 18px;
+      border: 1px solid var(--border);
+    }
+
+    #camera-preview {
+      display: block;
+      width: 100%;
+      max-height: 290px;
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #17231c;
+      object-fit: contain;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      flex: 1;
+      padding: 14px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+    }
+
+    button:hover:not(:disabled) { transform: translateY(-1px); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .secondary {
+      background: white;
+      color: var(--dark);
+      border: 1px solid var(--border);
+    }
+
+    button:focus-visible, input:focus-visible {
+      outline: 3px solid #e2ac35;
+      outline-offset: 4px;
+    }
+
+    .small { font-size: 13px; }
+    #status {
+      min-height: 24px;
+      overflow-wrap: anywhere;
+      margin-top: 14px;
+    }
+
+    .status-good { color: var(--green); }
+    .status-warning { color: var(--warning-text); }
+    .status-err { color: #8d2d2d; }
+
+    .empty {
+      padding: 45px 10px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    #prediction {
+      font-size: 25px;
+      line-height: 1.35;
+      margin: 0 0 8px;
+      color: var(--dark);
+    }
+
+    #plant-meta {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--green-soft);
+      color: var(--green-deep);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .notice {
+      border-radius: 12px;
+      background: var(--warning-bg);
+      padding: 14px;
+      color: var(--warning-text);
+      margin: 12px 0 18px;
+    }
+
+    .care-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .care-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #f9fbf7;
+      padding: 14px 16px;
+    }
+
+    .care-card h5 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      color: var(--dark);
+    }
+
+    .care-card p {
+      margin: 0 0 10px;
+      color: var(--muted);
+    }
+
+    .care-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--dark);
+      font-size: 13px;
+    }
+
+    .care-card ul {
+      margin: 0 0 10px;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .care-card li { margin-bottom: 6px; }
+
+    .match {
+      margin: 18px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #edf2ee;
+    }
+
+    .match p {
+      margin: 0 0 6px;
+      color: var(--dark);
+      font-weight: 600;
+    }
+
+    progress {
+      width: 100%;
+      height: 12px;
+      accent-color: var(--green);
+    }
+
+    details {
+      margin-top: 24px;
+      background: white;
+      padding: 18px 22px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    summary { cursor: pointer; font-weight: 700; }
+    footer { text-align: center; margin-top: 28px; }
+
+    @media (max-width: 720px) {
+      .layout { grid-template-columns: 1fr; }
+      header span { display: block; margin-left: 0; }
+      main { padding-top: 26px; }
+      .card { padding: 20px; }
+      .button-row { flex-direction: column; }
+    }
+  </style>
 </head>
+
 <body>
-<header class="navbar">
-  <a class="brand" href="#"><span>🌱</span> PlantCare <b>AI</b></a>
-  <nav>
-    <a href="#home">Home</a>
-    <a href="#detect">Detect</a>
-    <a href="#how">How It Works</a>
-    <a href="#about">About</a>
-  </nav>
-</header>
+  <header>🌿 PlantCare AI <span>Plant health project</span></header>
 
-<main>
-<section class="hero" id="home">
-  <div class="hero-copy">
-    <span class="badge">AI-POWERED PLANT HEALTH</span>
-    <h1>Give your plants a <span>health check</span> in seconds.</h1>
-    <p>Upload or capture a clear photo of a plant leaf. PlantCare AI will analyze it and help identify possible diseases, symptoms and next steps.</p>
-    <a class="primary-btn" href="#detect">🔍 Detect Plant Disease</a>
-    <div class="trust-row">
-      <span>🌾 Crop plants</span>
-      <span>🪴 Household plants</span>
-      <span>📱 Mobile friendly</span>
+  <main>
+    <section class="hero">
+      <span class="badge">A closer look at plant health</span>
+      <h1>What is your leaf telling you?</h1>
+      <p>Choose a clear leaf photo and explore possible plant conditions.</p>
+    </section>
+
+    <div class="layout">
+      <section class="card">
+        <h2>1. Upload a leaf photo</h2>
+
+        <div class="upload" id="upload-box" tabindex="0" aria-label="Upload leaf image area">
+          <div class="leaf" aria-hidden="true">🌱</div>
+          <label for="photo"><strong>Choose your plant image</strong></label>
+          <p class="small" id="upload-help">JPG, PNG or WebP · Maximum 10 MB</p>
+          <input
+            id="photo"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            aria-describedby="upload-help"
+          >
+          <div class="button-row">
+            <button id="start-camera" class="secondary" type="button">Use camera</button>
+          </div>
+        </div>
+
+        <video id="camera-preview" autoplay playsinline aria-label="Live camera preview" hidden></video>
+        <div id="camera-controls" class="button-row" hidden>
+          <button id="capture-photo" type="button">Take photo</button>
+          <button id="stop-camera" class="secondary" type="button">Close camera</button>
+        </div>
+        <img id="preview" alt="Preview of your selected plant photo" hidden>
+
+        <div class="button-row">
+          <button id="analyze" disabled>Analyze leaf</button>
+          <button id="reset" class="secondary" type="button">Clear</button>
+        </div>
+
+        <p id="status" class="small" role="status" aria-live="polite">
+          Choose a photo to begin.
+        </p>
+
+        <p class="small">
+          Use one leaf, good lighting and a simple background.
+          Your photo is processed in this browser.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="result-title">
+        <h2 id="result-title">2. Explore the prediction</h2>
+
+        <div id="empty" class="empty">
+          <div class="leaf" aria-hidden="true">🔎</div>
+          <p>Your results will appear here.</p>
+        </div>
+
+        <div id="results" hidden>
+          <p class="small">Top model match</p>
+          <div id="plant-meta">Plant health screening</div>
+          <h3 id="prediction"></h3>
+          <p id="notice" class="notice"></p>
+
+          <h4 id="matches-title">Three possible matches</h4>
+          <div id="matches"></div>
+
+          <p id="score-note" class="small">
+            Scores describe the model's preferences among its known
+            categories. They are not measured diagnostic accuracy.
+          </p>
+
+          <div id="care-details" class="care-grid"></div>
+        </div>
+      </section>
     </div>
-  </div>
-  <div class="hero-card">
-    <div class="leaf-orb">🌿</div>
-    <div class="floating-card top">🤖 AI Analysis <strong>Ready</strong></div>
-    <div class="floating-card bottom">✓ Image-based detection</div>
-  </div>
-</section>
 
-<section class="detect-section" id="detect">
-  <div class="section-heading">
-    <span class="eyebrow">START DETECTION</span>
-    <h2>Upload a plant photo</h2>
-    <p>For best results, use a well-lit photo where the affected leaf is clearly visible.</p>
-  </div>
+    <details>
+      <summary>Which plants and conditions are supported?</summary>
+      <p>
+        The model includes selected categories for apple, blueberry,
+        cherry, corn, grape, orange, peach, bell pepper, potato,
+        raspberry, soybean, squash, strawberry and tomato.
+        Coverage differs by crop; not every disease is included.
+      </p>
+      <p>
+        The classifier always selects from its known plant-disease categories,
+        even when the uploaded photo is unrelated or shows an unknown condition.
+        Predictions for non-plant photos are not meaningful diagnoses. A
+        "healthy" result does not rule out other plant problems.
+      </p>
+    </details>
 
-  <div class="detector">
-    <div class="drop-zone" id="dropZone">
-      <div class="upload-icon">📷</div>
-      <h3>Upload or capture a leaf image</h3>
-      <p>Drag & drop an image here, or choose a file from your device.</p>
-      <div class="upload-actions">
-        <label class="primary-btn small" for="fileInput">📁 Choose Image</label>
-        <button class="secondary-btn small" id="cameraBtn" type="button">📸 Use Camera</button>
-      </div>
-      <input id="fileInput" type="file" accept="image/png,image/jpeg,image/jpg" hidden>
-      <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
-      <small>Supported: JPG, JPEG, PNG • Recommended: clear leaf photo</small>
-    </div>
+    <footer class="small">
+      Educational screening tool. Confirm suspected disease with a
+      plant specialist before choosing treatment.
+    </footer>
 
-    <div class="preview-panel" id="previewPanel">
-      <div class="preview-placeholder">
-        <span>🌱</span>
-        <p>Your selected image will appear here.</p>
-      </div>
-    </div>
-  </div>
+    <noscript>Please enable JavaScript to use the detector.</noscript>
+  </main>
 
-  <div class="result-card" id="resultCard" hidden>
-    <div class="result-image-wrap"><img id="previewImage" alt="Selected plant leaf"></div>
-    <div class="result-info">
-      <span class="status">AI ANALYSIS READY</span>
-      <h3 id="resultTitle">Ready for prediction</h3>
-      <p id="resultText">The frontend is ready. Once the trained model is connected, its prediction will appear here.</p>
-      <div class="confidence">
-        <span>Model confidence</span>
-        <strong id="confidenceValue">—</strong>
-      </div>
-      <div class="progress"><span id="progressBar"></span></div>
-      <button class="secondary-btn" id="newImageBtn">↻ Check Another Image</button>
-    </div>
-  </div>
-</section>
+  <script type="module">
+    const MODEL =
+      "onnx-community/mobilenet_v2_1.0_224-plant-disease-identification-ONNX";
 
-<section class="how" id="how">
-  <div class="section-heading">
-    <span class="eyebrow">SIMPLE PROCESS</span>
-    <h2>How PlantCare AI works</h2>
-  </div>
-  <div class="steps">
-    <article><div>01</div><h3>Capture</h3><p>Take or upload a clear photo of the affected leaf.</p></article>
-    <article><div>02</div><h3>Analyze</h3><p>Our image model processes the leaf and compares visual patterns.</p></article>
-    <article><div>03</div><h3>Understand</h3><p>Get a predicted disease, confidence score and helpful guidance.</p></article>
-  </div>
-</section>
+    const photo = document.querySelector("#photo");
+    const preview = document.querySelector("#preview");
+    const analyze = document.querySelector("#analyze");
+    const status = document.querySelector("#status");
+    const results = document.querySelector("#results");
+    const empty = document.querySelector("#empty");
+    const matches = document.querySelector("#matches");
+    const matchesTitle = document.querySelector("#matches-title");
+    const scoreNote = document.querySelector("#score-note");
+    const careDetails = document.querySelector("#care-details");
+    const uploadBox = document.querySelector("#upload-box");
+    const reset = document.querySelector("#reset");
+    const predictionEl = document.querySelector("#prediction");
+    const noticeEl = document.querySelector("#notice");
+    const plantMetaEl = document.querySelector("#plant-meta");
+    const startCamera = document.querySelector("#start-camera");
+    const cameraPreview = document.querySelector("#camera-preview");
+    const cameraControls = document.querySelector("#camera-controls");
+    const capturePhoto = document.querySelector("#capture-photo");
+    const stopCameraButton = document.querySelector("#stop-camera");
 
-<section class="features" id="about">
-  <div><span>🌾</span><h3>Crop plants</h3><p>Designed to support common agricultural crops and their disease classes included in the model.</p></div>
-  <div><span>🪴</span><h3>Home plants</h3><p>Suitable for household and garden plants when those classes are included in the trained dataset.</p></div>
-  <div><span>🛡️</span><h3>Confidence-aware</h3><p>Low-confidence predictions can be flagged instead of presenting an unreliable diagnosis as certain.</p></div>
-</section>
-</main>
+    let classifier = null;
+    let imageURL = null;
+    let selectionID = 0;
+    let cameraStream = null;
 
-<footer>
-  <strong>🌱 PlantCare AI</strong>
-  <span>AI-based plant disease detection project</span>
-</footer>
+    function setStatus(message, tone = "neutral") {
+      status.textContent = message;
+      status.className = "small";
 
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+      if (tone === "good") status.classList.add("status-good");
+      if (tone === "warning") status.classList.add("status-warning");
+      if (tone === "error") status.classList.add("status-err");
+    }
+
+    function normalizeLabel(label) {
+      return String(label)
+        .replace(/.*?___/, "")
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function formatLabel(label) {
+      const normalized = normalizeLabel(label);
+      if (!normalized) return "Unknown condition";
+
+      const lower = normalized.toLowerCase();
+      if (lower.includes("healthy")) return "Healthy leaf";
+      if (lower.includes("rust")) return "Rust disease";
+      if (lower.includes("scab")) return "Scab disease";
+      if (lower.includes("blight")) return "Blight disease";
+      if (lower.includes("spot")) return "Leaf spot disease";
+      if (lower.includes("mosaic")) return "Mosaic disease";
+      if (lower.includes("mildew")) return "Powdery mildew";
+      if (lower.includes("rot")) return "Rot disease";
+      if (lower.includes("curl")) return "Leaf curl virus";
+
+      return normalized.replace(/\b(apple|blueberry|cherry|corn|grape|orange|peach|pepper|potato|raspberry|soybean|squash|strawberry|tomato)\b/gi, (match) =>
+        match.charAt(0).toUpperCase() + match.slice(1)
+      );
+    }
+
+    const diseaseCareGuide = {
+      "apple scab": {
+        title: "Apple scab",
+        summary: "A fungal disease that usually starts as olive-green spots on leaves and fruit.",
+        precautions: [
+          "Avoid overhead irrigation and keep foliage dry for longer periods.",
+          "Remove fallen leaves and infected fruit to reduce fungal spread.",
+          "Increase airflow around the tree by pruning crowded branches."
+        ],
+        treatment: [
+          "Apply a labeled fungicide early in the season before infection spreads.",
+          "Use resistant apple varieties when possible.",
+          "Repeat sprays according to the product instructions during wet weather."
+        ]
+      },
+      "black rot": {
+        title: "Black rot",
+        summary: "A common fungal disease that affects fruit, leaves, and stems.",
+        precautions: [
+          "Prune out infected twigs and remove fruit mummies from the tree.",
+          "Minimize leaf wetness by watering at the soil line.",
+          "Clean pruning tools and remove debris around the canopy."
+        ],
+        treatment: [
+          "Use a protectant fungicide during bloom and early fruit development.",
+          "Improve spacing and air movement within the canopy.",
+          "Discard heavily infected fruit so spores do not spread."
+        ]
+      },
+      "cedar apple rust": {
+        title: "Cedar apple rust",
+        summary: "A rust disease spread between apple trees and cedar hosts.",
+        precautions: [
+          "Keep juniper and cedar hosts away from the orchard if possible.",
+          "Remove nearby infected host material when practical.",
+          "Monitor early for orange-yellow leaf spots on apple foliage."
+        ],
+        treatment: [
+          "Apply fungicides at early leaf emergence and during repeated wet periods.",
+          "Choose resistant apple cultivars in high-risk areas.",
+          "Reduce leaf wetness and improve tree ventilation."
+        ]
+      },
+      "powdery mildew": {
+        title: "Powdery mildew",
+        summary: "A fungal disease that creates white powdery growth on leaves and shoots.",
+        precautions: [
+          "Avoid excess nitrogen fertilizer, which promotes tender growth.",
+          "Provide good spacing and airflow between plants.",
+          "Water at the base to keep leaves dry."
+        ],
+        treatment: [
+          "Use a fungicide labeled for powdery mildew on susceptible crops.",
+          "Remove severely infected leaves and stems when possible.",
+          "Treat early before the disease covers the whole plant."
+        ]
+      },
+      "gray leaf spot": {
+        title: "Gray leaf spot",
+        summary: "A fungal leaf disease common in warm, humid conditions.",
+        precautions: [
+          "Rotate crops away from corn in later seasons.",
+          "Avoid excessive irrigation during warm evenings.",
+          "Remove infected crop residue after harvest."
+        ],
+        treatment: [
+          "Apply fungicides when disease pressure is high and weather stays wet.",
+          "Use resistant hybrid varieties where available.",
+          "Scout fields frequently so treatment is applied early."
+        ]
+      },
+      "common rust": {
+        title: "Common rust",
+        summary: "Orange-brown pustules on leaves often indicate rust infection.",
+        precautions: [
+          "Avoid overhead watering to reduce leaf wetness.",
+          "Clean fields and remove volunteer plants after harvest.",
+          "Rotate away from susceptible crops when possible."
+        ],
+        treatment: [
+          "Use foliar fungicides when rust is confirmed and weather favors spread.",
+          "Plant resistant corn hybrids if rust pressure is recurring.",
+          "Monitor early so control begins before severe defoliation."
+        ]
+      },
+      "northern leaf blight": {
+        title: "Northern leaf blight",
+        summary: "Long cigar-shaped lesions usually appear on lower leaves first.",
+        precautions: [
+          "Rotate crops and remove infested residues after harvest.",
+          "Avoid dense plant spacing that limits airflow.",
+          "Monitor lower leaves early in the season."
+        ],
+        treatment: [
+          "Apply fungicides at the first sign of disease when conditions are favorable.",
+          "Choose hybrids with moderate to strong resistance.",
+          "Repeat treatments on a schedule if disease keeps advancing."
+        ]
+      },
+      "esca": {
+        title: "Esca",
+        summary: "A trunk and vine disease that causes dieback and leaf symptoms.",
+        precautions: [
+          "Sanitize pruning tools to avoid moving spores between vines.",
+          "Prune during dry weather and remove diseased wood.",
+          "Keep vines healthy with balanced nutrition and irrigation."
+        ],
+        treatment: [
+          "Remove infected wood and avoid leaving stubs in the vine.",
+          "Consult a vineyard specialist before heavy pruning or treatment.",
+          "Use vineyard disease management practices adapted to local conditions."
+        ]
+      },
+      "leaf blight": {
+        title: "Leaf blight",
+        summary: "Angular or irregular leaf lesions can indicate a blight problem.",
+        precautions: [
+          "Avoid wetting foliage with irrigation and reduce leaf humidity.",
+          "Practice crop rotation and remove crop residue after harvest.",
+          "Scout frequently during warm, humid weather."
+        ],
+        treatment: [
+          "Use a disease-specific fungicide early in outbreak stages.",
+          "Remove the worst infected leaves to reduce spread.",
+          "Improve plant spacing and airflow to limit moisture retention."
+        ]
+      },
+      "citrus greening": {
+        title: "Citrus greening",
+        summary: "A serious bacterial disease that disrupts nutrient movement in the tree.",
+        precautions: [
+          "Control psyllid insects that spread the bacterial pathogen.",
+          "Remove infected trees when they are beyond recovery.",
+          "Avoid moving infested plant material between orchards."
+        ],
+        treatment: [
+          "No cure exists for symptomatic trees; suppress vector insects and remove infected material.",
+          "Use certified disease-free nursery stock.",
+          "Work with local extension experts for orchard-wide management."
+        ]
+      },
+      "bacterial spot": {
+        title: "Bacterial spot",
+        summary: "Leaf and fruit spots caused by bacterial infection often worsen in wet periods.",
+        precautions: [
+          "Avoid overhead watering and overcrowded plantings.",
+          "Keep leaves dry by watering early in the day.",
+          "Remove infected leaves and debris promptly."
+        ],
+        treatment: [
+          "Use labeled copper or biological products in a preventive program.",
+          "Plant resistant varieties where available.",
+          "Avoid working in wet plants because spread can increase quickly."
+        ]
+      },
+      "early blight": {
+        title: "Early blight",
+        summary: "Dark concentric lesions commonly appear on older leaves first.",
+        precautions: [
+          "Water at the base and avoid wet leaves overnight.",
+          "Mulch and prune to improve airflow around the plant.",
+          "Remove infected foliage when the disease begins."
+        ],
+        treatment: [
+          "Apply a labeled fungicide before the disease becomes severe.",
+          "Use resistant varieties whenever possible.",
+          "Repeat applications according to disease pressure and rainfall."
+        ]
+      },
+      "late blight": {
+        title: "Late blight",
+        summary: "Rapidly spreading fungal disease that can devastate foliage and tubers.",
+        precautions: [
+          "Avoid overcrowding and keep foliage dry as much as possible.",
+          "Remove volunteer plants and cull infected material.",
+          "Scout often during cool, humid weather."
+        ],
+        treatment: [
+          "Start a preventive fungicide program under favorable weather conditions.",
+          "Use resistant varieties and remove infected plants quickly.",
+          "Prompt action is critical because disease can spread extremely fast."
+        ]
+      },
+      "leaf mold": {
+        title: "Leaf mold",
+        summary: "A fungal disease often favored by humidity and poor air movement.",
+        precautions: [
+          "Improve greenhouse ventilation and reduce nighttime humidity.",
+          "Avoid frequent wetting of leaves.",
+          "Thin foliage so air can move freely around the crop."
+        ],
+        treatment: [
+          "Apply a crop-safe fungicide recommended for leaf mold.",
+          "Remove badly affected leaves and reduce moisture stress.",
+          "Keep the crop environment drier and more ventilated."
+        ]
+      },
+      "septoria leaf spot": {
+        title: "Septoria leaf spot",
+        summary: "Small circular spots with dark margins are typical of this disease.",
+        precautions: [
+          "Remove infected lower leaves and clean up debris.",
+          "Water plants at soil level instead of overhead.",
+          "Avoid crowding and maintain good airflow."
+        ],
+        treatment: [
+          "Use fungicide sprays before the disease becomes severe.",
+          "Practice crop rotation to reduce the pathogen carryover.",
+          "Combine sanitation with resistant varieties when possible."
+        ]
+      },
+      "spider mites": {
+        title: "Spider mites",
+        summary: "Tiny sap-sucking pests can cause stippling and bronzing on leaves.",
+        precautions: [
+          "Increase humidity and monitor undersides of leaves.",
+          "Avoid excessive drought stress, which favors outbreaks.",
+          "Check nearby weeds and volunteer plants that can harbor mites."
+        ],
+        treatment: [
+          "Wash plants with water or use labeled miticides when populations rise.",
+          "Consider beneficial predators in greenhouse or protected crops.",
+          "Repeat treatment as needed because mites reproduce quickly."
+        ]
+      },
+      "target spot": {
+        title: "Target spot",
+        summary: "Target-like lesions often appear when conditions stay warm and wet.",
+        precautions: [
+          "Improve airflow and limit humidity in the canopy.",
+          "Avoid wetting foliage and remove infected debris.",
+          "Rotate crops where practical."
+        ],
+        treatment: [
+          "Apply a labeled fungicide early when symptoms first appear.",
+          "Trim lower leaves to raise airflow and reduce disease spread.",
+          "Monitor weather so applications match disease risk."
+        ]
+      },
+      "tomato yellow leaf curl virus": {
+        title: "Tomato yellow leaf curl virus",
+        summary: "A viral disease spread by whiteflies that causes leaf curling and yellowing.",
+        precautions: [
+          "Control whiteflies with monitoring and sanitation.",
+          "Remove infected plants quickly before spread continues.",
+          "Use insect-proof covers where suitable for greenhouse production."
+        ],
+        treatment: [
+          "There is no direct cure for virus-infected plants; focus on prevention and removal.",
+          "Use resistant cultivars when available.",
+          "Keep nearby weeds and alternative hosts under control."
+        ]
+      },
+      "mosaic virus": {
+        title: "Mosaic virus",
+        summary: "Viral mosaics create mottled, distorted, and often stunted foliage.",
+        precautions: [
+          "Avoid handling plants when moving between rows without sanitation.",
+          "Control insect vectors that spread viruses.",
+          "Remove infected plants to prevent further spread."
+        ],
+        treatment: [
+          "No cure exists; remove symptomatic plants and manage vectors.",
+          "Use virus-free seed and resistant varieties.",
+          "Keep the planting area weed-free and clean."
+        ]
+      },
+      "healthy": {
+        title: "Healthy leaf",
+        summary: "The leaf looks healthy, but continued monitoring is still important.",
+        precautions: [
+          "Keep watering consistent and avoid stress from drought or flooding.",
+          "Inspect new growth regularly for early signs of nutrient deficiency or disease.",
+          "Maintain balanced nutrition and good airflow around the plant."
+        ],
+        treatment: [
+          "Continue routine care and monitoring.",
+          "Apply preventive care such as mulching and proper pruning.",
+          "Stay alert to environmental changes that can trigger stress."
+        ]
+      }
+    };
+
+    function getResultMeta(label, score) {
+      const percent = (score * 100).toFixed(1);
+      const isHealthy = /healthy/i.test(label);
+
+      if (isHealthy) {
+        return {
+          tag: "Likely healthy",
+          notice:
+            "This looks consistent with a healthy leaf. Still inspect for stress signs or compare with nearby leaves before concluding."
+        };
+      }
+
+      return {
+        tag: `${percent}% confidence`,
+        notice:
+          "Possible disease concern. Check the leaf's pattern, timing, and plant variety before choosing treatment."
+      };
+    }
+
+    function getDiseaseInfo(label) {
+      const normalized = normalizeLabel(label).toLowerCase();
+
+      const exactMatch = Object.keys(diseaseCareGuide).find((key) =>
+        normalized.includes(key)
+      );
+
+      if (exactMatch) {
+        return diseaseCareGuide[exactMatch];
+      }
+
+      const fallbackTitle = formatLabel(label);
+      return {
+        title: fallbackTitle,
+        summary: "This result may indicate a stress issue or disease not matched by the model's standard labels.",
+        precautions: [
+          "Look closely at the leaf pattern, lesion shape, and plant history.",
+          "Check nearby plants for similar symptoms before treating the area.",
+          "Avoid unnecessary sprays until the cause is more certain."
+        ],
+        treatment: [
+          "Start with sanitation, pruning, and improved airflow around the plant.",
+          "Use a targeted treatment only after confirming the likely disease.",
+          "Consult a local agricultural extension service for a more precise recommendation."
+        ]
+      };
+    }
+
+    function renderCareGuidance(predictions) {
+      careDetails.replaceChildren();
+
+      for (const prediction of predictions.slice(0, 3)) {
+        const info = getDiseaseInfo(prediction.label);
+        const card = document.createElement("div");
+        card.className = "care-card";
+
+        const title = document.createElement("h5");
+        title.textContent = info.title;
+
+        const summary = document.createElement("p");
+        summary.textContent = info.summary;
+
+        const precautionTitle = document.createElement("strong");
+        precautionTitle.textContent = "Precautions";
+
+        const precautions = document.createElement("ul");
+        info.precautions.forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          precautions.append(li);
+        });
+
+        const treatmentTitle = document.createElement("strong");
+        treatmentTitle.textContent = "Possible treatment";
+
+        const treatmentList = document.createElement("ul");
+        info.treatment.forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          treatmentList.append(li);
+        });
+
+        card.append(title, summary, precautionTitle, precautions, treatmentTitle, treatmentList);
+        careDetails.append(card);
+      }
+    }
+
+    function clearResults() {
+      results.hidden = true;
+      empty.hidden = false;
+      matches.replaceChildren();
+      careDetails.replaceChildren();
+      matchesTitle.hidden = false;
+      matches.hidden = false;
+      scoreNote.hidden = false;
+      careDetails.hidden = false;
+      predictionEl.textContent = "";
+      noticeEl.textContent = "";
+      plantMetaEl.textContent = "Plant health screening";
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+        cameraStream = null;
+      }
+
+      cameraPreview.srcObject = null;
+      cameraPreview.hidden = true;
+      cameraControls.hidden = true;
+      startCamera.disabled = false;
+    }
+
+    function resetApp() {
+      stopCamera();
+      clearResults();
+      analyze.disabled = true;
+      photo.disabled = false;
+      photo.value = "";
+      preview.hidden = true;
+      preview.removeAttribute("src");
+
+      if (imageURL) {
+        URL.revokeObjectURL(imageURL);
+        imageURL = null;
+      }
+
+      setStatus("Choose a photo to begin.");
+    }
+
+    photo.addEventListener("change", async () => {
+      stopCamera();
+      const currentSelection = ++selectionID;
+
+      clearResults();
+      analyze.disabled = true;
+      preview.hidden = true;
+      preview.removeAttribute("src");
+
+      if (imageURL) {
+        URL.revokeObjectURL(imageURL);
+        imageURL = null;
+      }
+
+      const file = photo.files[0];
+
+      if (!file) {
+        setStatus("Choose a photo to begin.");
+        return;
+      }
+
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setStatus("Please choose a JPG, PNG or WebP image.", "error");
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        setStatus("This file is too large. Choose one under 10 MB.", "error");
+        return;
+      }
+
+      const candidateURL = URL.createObjectURL(file);
+      imageURL = candidateURL;
+      preview.src = candidateURL;
+
+      try {
+        await preview.decode();
+
+        if (currentSelection !== selectionID) return;
+
+        if (preview.naturalWidth * preview.naturalHeight > 24000000) {
+          throw new Error("Please resize this image to under 24 megapixels.");
+        }
+
+        if (Math.min(preview.naturalWidth, preview.naturalHeight) < 100) {
+          throw new Error("This image is too small. Choose a clearer photo.");
+        }
+
+        preview.hidden = false;
+        analyze.disabled = false;
+        setStatus("Photo ready. Select Analyze leaf.", "good");
+      } catch (error) {
+        if (currentSelection !== selectionID) return;
+
+        URL.revokeObjectURL(candidateURL);
+        imageURL = null;
+        preview.removeAttribute("src");
+        setStatus(
+          error.name === "EncodingError"
+            ? "This image could not be opened. Try another photo."
+            : error.message,
+          "error"
+        );
+      }
+    });
+
+    startCamera.addEventListener("click", async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setStatus(
+          "Camera access is unavailable in this browser. Open the page on HTTPS or localhost, or choose an image file instead.",
+          "error"
+        );
+        return;
+      }
+
+      startCamera.disabled = true;
+      setStatus("Requesting camera permission…", "warning");
+
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: "environment" } }
+        });
+        cameraPreview.srcObject = cameraStream;
+        cameraPreview.hidden = false;
+        cameraControls.hidden = false;
+        setStatus("Camera ready. Position a leaf and take a photo.", "good");
+      } catch (error) {
+        stopCamera();
+        console.error(error);
+        const message = error.name === "NotAllowedError"
+          ? "Camera permission was denied. Allow camera access in your browser settings or choose an image file."
+          : error.name === "NotFoundError"
+            ? "No camera was found. Choose an image file instead."
+            : "Could not start the camera. Check that it is available and not being used by another app.";
+        setStatus(message, "error");
+      }
+    });
+
+    capturePhoto.addEventListener("click", async () => {
+      if (!cameraStream || !cameraPreview.videoWidth || !cameraPreview.videoHeight) {
+        setStatus("The camera is not ready yet. Wait for the preview and try again.", "error");
+        return;
+      }
+
+      capturePhoto.disabled = true;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = cameraPreview.videoWidth;
+        canvas.height = cameraPreview.videoHeight;
+        const context = canvas.getContext("2d");
+
+        if (!context) {
+          throw new Error("Could not capture the camera image.");
+        }
+
+        context.drawImage(cameraPreview, 0, 0);
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob((imageBlob) => {
+            if (imageBlob) resolve(imageBlob);
+            else reject(new Error("Could not create a photo from the camera."));
+          }, "image/jpeg", 0.92);
+        });
+
+        const capturedFile = new File(
+          [blob],
+          `plant-photo-${Date.now()}.jpg`,
+          { type: "image/jpeg" }
+        );
+        const transfer = new DataTransfer();
+        transfer.items.add(capturedFile);
+        photo.files = transfer.files;
+        stopCamera();
+        photo.dispatchEvent(new Event("change", { bubbles: true }));
+      } catch (error) {
+        console.error(error);
+        setStatus(error.message || "Could not capture a photo. Try again.", "error");
+      } finally {
+        capturePhoto.disabled = false;
+      }
+    });
+
+    stopCameraButton.addEventListener("click", () => {
+      stopCamera();
+      setStatus("Camera closed. You can choose an image file or reopen the camera.");
+    });
+
+    uploadBox.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      uploadBox.classList.add("dragging");
+    });
+
+    uploadBox.addEventListener("dragleave", () => {
+      uploadBox.classList.remove("dragging");
+    });
+
+    uploadBox.addEventListener("drop", (event) => {
+      event.preventDefault();
+      uploadBox.classList.remove("dragging");
+      const file = event.dataTransfer.files?.[0];
+      if (!file) return;
+
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      photo.files = dataTransfer.files;
+      photo.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    uploadBox.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        photo.click();
+      }
+    });
+
+    analyze.addEventListener("click", async () => {
+      if (!imageURL) return;
+
+      analyze.disabled = true;
+      photo.disabled = true;
+      analyze.textContent = "Analyzing…";
+      clearResults();
+
+      try {
+        if (!classifier) {
+          setStatus("Loading the AI model. The first analysis needs internet access…", "warning");
+
+          const { pipeline, env } = await import(
+            "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1"
+          );
+
+          env.allowLocalModels = false;
+          env.backends.onnx.wasm.numThreads = 1;
+
+          classifier = await pipeline("image-classification", MODEL, {
+            device: "wasm",
+            dtype: "fp32",
+            progress_callback: (event) => {
+              if (
+                event.status === "progress" &&
+                Number.isFinite(event.progress)
+              ) {
+                setStatus(
+                  `Downloading AI files: ${Math.round(event.progress)}% of current file`,
+                  "warning"
+                );
+              }
+            }
+          });
+        }
+
+        setStatus("Examining your image…", "warning");
+
+        const predictions = await classifier(imageURL, { top_k: 3 });
+
+        if (!predictions.length) {
+          throw new Error("The model returned no predictions.");
+        }
+
+        predictions.sort((a, b) => b.score - a.score);
+
+        const best = predictions[0];
+        const secondScore = predictions[1]?.score ?? 0;
+        const uncertain =
+          best.score < 0.80 || best.score - secondScore < 0.20;
+        const isHealthy = /healthy/i.test(best.label);
+
+        const { tag, notice } = getResultMeta(best.label, best.score);
+        const displayLabel = formatLabel(best.label);
+
+        predictionEl.textContent = isHealthy
+          ? "Plant is healthy — no disease detected"
+          : displayLabel;
+        plantMetaEl.textContent = tag;
+        noticeEl.textContent = isHealthy
+          ? "The model classified this leaf as healthy, so no disease prediction or treatment advice is shown. This screening result cannot rule out every plant problem."
+          : uncertain
+          ? "Uncertain result. Try a closer, clearer photo and compare the alternatives below."
+          : notice;
+
+        matchesTitle.hidden = isHealthy;
+        matches.hidden = isHealthy;
+        scoreNote.hidden = isHealthy;
+        careDetails.hidden = isHealthy;
+
+        if (!isHealthy) {
+          renderCareGuidance(predictions);
+
+          for (const prediction of predictions) {
+            const row = document.createElement("div");
+            row.className = "match";
+
+            const text = document.createElement("p");
+            text.textContent = `${formatLabel(prediction.label)} — ${(prediction.score * 100).toFixed(1)}%`;
+
+            const bar = document.createElement("progress");
+            bar.max = 1;
+            bar.value = prediction.score;
+            bar.setAttribute("aria-label", prediction.label + " model score");
+
+            row.append(text, bar);
+            matches.append(row);
+          }
+        }
+
+        empty.hidden = true;
+        results.hidden = false;
+        setStatus("Analysis complete. You can choose another photo.", "good");
+      } catch (error) {
+        console.error(error);
+        setStatus(
+          "Analysis could not finish. Check your internet connection and try again. If it keeps failing, try another browser.",
+          "error"
+        );
+      } finally {
+        photo.disabled = false;
+        analyze.disabled = !imageURL;
+        analyze.textContent = "Analyze leaf";
+      }
+    });
+
+    reset.addEventListener("click", resetApp);
+
+    window.addEventListener("pagehide", () => {
+      stopCamera();
+      if (imageURL) URL.revokeObjectURL(imageURL);
+    });
+  </script>
 </body>
 </html>
